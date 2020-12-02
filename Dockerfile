@@ -7,4 +7,5 @@ RUN wget -O - https://github.com/jemalloc/jemalloc/releases/download/5.2.1/jemal
     make install
 FROM adoptopenjdk/openjdk15:alpine-jre
 COPY --from=builder /usr/local/lib/libjemalloc.so.2 /usr/local/lib/
+RUN apk add --no-cache libstdc++
 ENV LD_PRELOAD=/usr/local/lib/libjemalloc.so.2
