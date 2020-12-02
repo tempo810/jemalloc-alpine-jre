@@ -1,11 +1,14 @@
 FROM adoptopenjdk/openjdk15:alpine-jre AS builder
-RUN apk add build-base
-RUN wget -O - https://github.com/jemalloc/jemalloc/releases/download/5.2.1/jemalloc-5.2.1.tar.bz2 | tar -xj && \
-    cd jemalloc-5.2.1 && \
-    ./configure && \
-    make && \
+RUN apk add git build-base cmake linux-headers
+RUN wget -O - https://github.com/microsoft/mimalloc/archive/v1.6.7.tar.gz | tar -xz && \
+    cd mimalloc-1.6.7 && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j$(nproc) && \
     make install
 FROM adoptopenjdk/openjdk15:alpine-jre
-COPY --from=builder /usr/local/lib/libjemalloc.so.2 /usr/local/lib/
-RUN apk add --no-cache libstdc++
-ENV LD_PRELOAD=/usr/local/lib/libjemalloc.so.2
+COPY --from=builder /mimalloc-1.6.7/build/*.so.* /lib
+RUN ln -s /lib/libmimalloc.so.* /lib/libmimalloc.so
+ENV LD_PRELOAD=/lib/libmimalloc.so
+ENV MIMALLOC_LARGE_OS_PAGES=1
